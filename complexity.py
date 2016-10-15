@@ -2,6 +2,13 @@
 
 import functools
 
+def _P ( m , n ) :
+    p = [ [ 1 for j in range( n ) ] for i in range( m ) ]
+    for i in range( 1 , m ) :
+        for j in range( 1 , n ) :
+            p[i][j] = p[i-1][j] + p[i][j-1]
+    return p
+
 def _R ( a , b , g ) :
 
     @functools.lru_cache(None)
@@ -18,9 +25,27 @@ def _F ( a , b , g ) :
 
     def F ( k , u ) :
 
-        return ( ( (a//b)**(u+1) - 1 ) // ( a//b - 1 ) ) * ( ( a**k - 1 ) // ( a - 1 ) ) * b**u * g
+        return ( ((a//b)**(u+1)-1) // (a//b-1) ) * ( (a**k-1) // (a-1) ) * b**u * g
 
     return F
+
+def _G ( a , b , g ) :
+
+    def G ( k , u ) :
+
+        S = b**u * g
+
+        # ! coeff is wrong in T2 T3
+        # T1 = sum( (a//b+a)**i for i in range( 0 , u+k ) )
+        # T2 = sum( (a//b+a)**i for i in range( 0 , u ) ) * a**(k)
+        # T3 = sum( (a//b+a)**i for i in range( 0 , k-1 ) ) * (a//b)**(u+1)
+        # return ( T1 - T2 - T3 ) * S
+
+        p = _P(u+1,k)
+
+        return S * sum( sum( ( a**(i+j) // b**i * p[i][j] ) for j in range(k) ) for i in range( u + 1 ) )
+
+    return G
 
 def get_power ( n , b ) :
     if n < 1 :
@@ -57,6 +82,7 @@ if __name__ == '__main__' :
     RS = '\033[0m'
     KO = '\033[91m'
     OK = '\033[92m'
+    WA = '\033[93m'
 
     c = 10
     r = 2**8
@@ -64,6 +90,7 @@ if __name__ == '__main__' :
 
     T , R , a , b , g = _T( c , r , d )
     F = _F(a,b,g)
+    G = _G(a,b,g)
 
     print( 'c = {}'.format(c) )
     print( 'r = {}'.format(r) )
@@ -75,8 +102,9 @@ if __name__ == '__main__' :
     for k in range( 1 , 10 ) :
         for u in range( 0 , 10 ) :
             t = T(k,b**u)
-            f = F(k,u)
-            s = 'k = {}, u = {}, T(k,b^u) = {}, F(k,u) = {}'.format(k,u,t,f)
-            co = OK if t == f else KO
+            f = G(k,u)
+            r = f/t
+            s = 'k = {}, u = {}, T(k,b^u) = {}, F(k,u) = {}, {}'.format(k,u,t,f,r)
+            co = OK if t == f else ( WA if t < f else KO )
             print( co + s + RS )
 
